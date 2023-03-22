@@ -1,0 +1,553 @@
+#Funciones vectoriales y carmichael
+import sympy
+import sympy as s
+import numpy as np
+import scipy as sp
+from sympy import substitution
+import math as m
+def semiperimetro(a, b, c):
+    res = (a + b + c)/2
+    return res
+def heron(s, a, b, c):
+    res = math.sqrt(s*(s-a)*(s-b)*(s-c))
+    return s
+def vector_unitario(a, b, c):
+    v = [a, b, c]
+    mod = sqrt((v[0])**2 + v[1]**2 + v[2]**2)
+    res = [a/mod, b/mod, c/mod]
+    return res
+def norma(v):
+    suma = 0
+    for i in range(len(v)):
+        suma+=(v[i])**2
+    return s.simplify(suma)**0.5
+
+def T(a):
+    r = a
+    for i in range(len(r)):
+        r[i] = s.diff(r[i])
+    r = np.array(r)*(1/norma(r))
+    for h in range(len(r)):
+        r[h] = s.expand(s.sympify(r[h]))
+    return r
+def velocidad(r):
+    for i in range(len(r)):
+        r[i] = s.diff(r[i])
+    return r
+def acel(r):
+    a = velocidad(r)
+    for i in range(len(a)):
+        a[i] = s.expand(s.diff(a[i]))
+    return a
+
+def Normal(r):
+    r = T(r)
+    for i in range(len(r)):
+        r[i] = s.diff(r[i])
+    r = np.array(r) * (1 / norma(r))
+    for h in range(len(r)):
+        r[h] = s.expand(s.sympify(r[h]))
+    return r
+def B(r):
+    return np.cross(T(r), Normal(r))
+def pluging(r, x, n):
+    l = []
+    for i in range(len(r)):
+        a = (r[i].subs(x, n))
+        l.append(a)
+    return l
+
+t = s.var("t")
+from math import gcd
+
+def carmichael(n):
+    """Función que calcula la función de Carmichael de un número n."""
+    if n < 2:
+        return 1
+    factors = factorize(n)
+    result = 1
+    for p, k in factors.items():
+        result = lcm(result, (p**(k-1)) * (p-1))
+    return result
+
+def factorize(n):
+    """Función que factoriza un número en sus factores primos."""
+    factors = {}
+    i = 2
+    while i*i <= n:
+        if n % i == 0:
+            if i not in factors:
+                factors[i] = 0
+            while n % i == 0:
+                n //= i
+                factors[i] += 1
+        i += 1
+    if n > 1:
+        factors[n] = 1
+    return factors
+
+def lcm(a, b):
+    """Función auxiliar que calcula el mínimo común múltiplo de dos enteros."""
+    return a*b // gcd(a, b)
+
+# Ejemplo de uso
+print(carmichael(12))
+print(lcm(8,10))
+#Proyecto de polinomio caracteristico
+import matplotlib.pyplot as plt
+import numpy as np
+import fractions
+import scipy.odr
+import sympy as s
+import math as m
+#funcion calcular la inversa de una matriz
+def traza(m):
+    #Funcion que calcula la traza de una matriz
+    traza = 0
+    for i in range(len(m)):
+        for j in range(i, i+1):
+            traza += m[i][j]
+    return traza
+
+
+def triang3x3(a):
+    #funcion que triangula una matriz 3x3
+    m = np.array(a)
+    k = m[1][0] / m[0][0]
+    t = m[2][0] / m[0][0]
+    m[1][0] = -k * m[0][0] + m[1][0]
+    m[1][1] = -k * m[0][1] + m[1][1]
+    m[1][2] = -k * m[0][2] + m[1][2]
+    m[2][0] = -t * m[0][0] + m[2][0]
+    m[2][1] = -t * m[0][1] + m[2][1]
+    m[2][2] = -t * m[0][2] + m[2][2]
+    x = m[2][1] / m[1][1]
+    m[2][1] = -x * m[1][1] + m[2][1]
+    m[2][2] = -x * m[1][2] + m[2][2]
+    return m
+def traspuesta(m):
+    return np.transpose(m)
+#B es una matriz especial, los elementos de su diagonal principal en su matriz triangulada son sus valores propios
+B =np.array([[2,-2,2], [0,1,1], [-4,8,3]])
+#Variables Generales Matriz X general 3x3
+a11 = s.var("a11")
+a12 = s.var("a12")
+a13 = s.var("a13")
+a21 = s.var("a21")
+a22 = s.var("a22")
+a23 = s.var("a23")
+a31 = s.var("a31")
+a32 = s.var("a32")
+a33 = s.var("a33")
+X = np.array([[a11, a12, a13],[a21,a22, a23], [a31, a32, a33]])
+def determinant(a):
+    #determinante matriz nxn, matriz especial 3x3
+    if len(a) == 3:
+        q = a[0][0]*a[1][1]*a[2][2]
+        w = a[0][1]*a[1][2]*a[2][0]
+        e = a[0][2]*a[1][0]*a[2][1]
+        t = a[2][0]*a[1][1]*a[0][2]
+        y = a[2][1]*a[1][2]*a[0][0]
+        z = a[2][2]*a[1][0]*a[0][1]
+        return q+w+e - (t+y+z)
+    elif len(a) == 2:
+        q = a[0][0]*a[1][1]
+        r = a[0][1]*a[1][0]
+        return q-r
+
+
+    assert len(a.shape) == 2
+    assert a.shape[0] == a.shape[1]
+    n = a.shape[0]
+
+    for k in range(0, n - 1):
+
+        for i in range(k + 1, n):
+            if a[i, k] != 0.0:
+                lam = a[i, k] / a[k, k]
+                a[i, k:n] = a[i, k:n] - lam * a[k, k:n]
+
+    # the matrix (a) is now in the upper triangular form
+
+    return np.prod(np.diag(a))
+def nx2n(n_Rows, n_Columns):
+    Zeros = []
+    for i in range(n_Rows):
+        Zeros.append([])
+        for j in range(n_Columns * 2):
+            Zeros[i].append(0)
+    return Zeros
+
+
+# Applying matrix coefficients
+def update(inputs, n_Rows, n_Columns, Zero):
+    for i in range(n_Rows):
+        for j in range(n_Columns):
+            Zero[i][j] = inputs[i][j]
+    return Zero
+
+
+# Augmenting Identity Matrix of Order n
+def identity(n_Rows, n_Columns, Matrix):
+    for i in range(n_Rows):
+        for j in range(n_Columns):
+            if i == j:
+                Matrix[i][j + n_Columns] = 1
+    return Matrix
+
+
+# Applying & implementing the GJE algorithm
+def Gussain_Jordan_Elimination(n_Rows, n_Columns, Matrix):
+    for i in range(n_Rows):
+        if Matrix[i][i] == 0:
+            print('error cannot divide by "0"')
+
+        for j in range(n_Columns):
+            if i != j:
+                ratio = Matrix[j][i] / Matrix[i][i]
+
+                for k in range(2 * n_Columns):
+                    Matrix[j][k] = Matrix[j][k] - ratio * Matrix[i][k]
+    return Matrix
+# Row Operation to make Principal Diagonal Element to '1'
+def row_op(n_Rows, n_Columns, Matrix):
+    for i in range(n_Rows):
+        divide = Matrix[i][i]
+        for j in range(2 * n_Columns):
+            Matrix[i][j] = Matrix[i][j] / divide
+    return Matrix
+
+
+# Matriz Inversa
+def Inverse(Matrix):
+    returnable = []
+    number_Rows = int(len(Matrix))
+    number_Columns = int(len(Matrix[0]))
+    Inversed_Matrix = (row_op(number_Rows, number_Columns,
+                              Gussain_Jordan_Elimination(number_Rows, number_Columns,
+                                                         identity(number_Rows, number_Columns,
+                                                                  update(Matrix, number_Rows, number_Columns,
+                                                                         nx2n(number_Rows, number_Columns))))))
+    for i in range(number_Rows):
+        returnable.append([])
+        for j in range(number_Columns, 2 * number_Columns):
+            returnable[i].append(Inversed_Matrix[i][j])
+    return np.array(returnable)
+def hadammar(c, d):
+    #Producto elemento a elemento "Producto de Hadammar"
+    had = np.multiply(c, d)
+    return had
+def combinada(a):
+    #Funcion que devuelve la matriz combinada dada una matriz
+    x = hadammar(a, traspuesta(Inverse(a)))
+    return np.array(x)
+def combN(f, h):
+    def combi(a):
+        # Funcion que devuelve la matriz combinada dada una matriz
+        x = hadammar(a, traspuesta(np.linalg.inv(a)))
+        return np.array(x)
+    #funcion que clacula una funcion N veces
+    for i in range(h-1):
+        f = combi(f)
+    return f
+def diagLambda(n):
+        M = []
+        x = s.var("x")
+        for i in range(n):
+            c = []
+            for j in range(n):
+                j = 0
+                c.append(j)
+            M.append(c)
+        for i in range(len(M)):
+            for j in range(i, i + 1):
+                M[i][j] = x
+        return M
+def PolinCarac(m):
+    #funcion que devuelve el polinomio caracteristico de una matriz
+    a = diagLambda(len(m))
+    L = m - a
+    return s.expand(determinant(L))
+M = [[2,1,2],[3,9,9],[10,1,2]]
+com = combinada(B)
+mTriang = triang3x3(B)
+pCX = PolinCarac(B)
+pCCom = PolinCarac(com)
+X1 = [[a11, a12], [a21, a22]]
+f = [[1,2], [2,3]]
+n = 3 # Tamaño de la matriz
+def generate_matrix(n):
+    # Generamos una matriz aleatoria de tamaño nxn con valores entre 0 y 1
+    A = np.random.rand(n, n)
+    # Normalizamos cada fila para que la suma de sus elementos sea igual a 1
+    A = A / A.sum(axis=1)[:, np.newaxis]
+    # Normalizamos cada columna para que la suma de sus elementos sea igual a 1
+    A = A / A.sum(axis=0)
+    return A
+import numpy as np
+def inputmatrix(a, b):
+    M = []
+    for i in range(a):
+        c = []
+        for j in range(b):
+            j = float(input(f"Introduce el valor de los coeficientes por filas {i} {j}: "))
+            c.append(j)
+        M.append(c)
+    return M
+def mtrRes(a):
+    M = []
+    for i in range(a):
+        c = []
+        for j in range(1):
+            j = float(input(f"Introduce los valores de los resultados segun las columnas{i} {j}: "))
+            c.append(j)
+        M.append(c)
+    return M
+"""
+a = int(input("Introduzca el numero de incognitas: "))
+b = int(input("Introduzca el numero de ecuaciones: "))
+"""
+def sol(M, R):
+    res = []
+    if np.linalg.det(M)==0:
+        print("No tiene solucion.")
+    else:
+        res = np.dot(np.linalg.inv(M), R)
+    return res
+M = inputmatrix(3,3)
+R = inputmatrix(3, 1)
+print(M)
+print(R)
+
+print(sol(M, R))
+
+mm = s.Matrix([[4, -1, 1], [0,1,3], [0,2,2]])
+a= com
+print(sum(a[1]))
+
+#Primer proyecto de matrices
+import matplotlib.pyplot as plt
+import numpy as np
+import sage
+from sympy import *
+
+L = [[1, 0, 0],
+    [0, 1, 0],
+    [0, 0, 1]]
+print("L = ", L)
+U = [[0, 0, 0],
+     [0, 0, 0],
+     [0, 0, 0]]
+columnX = []
+"""
+i = int(input("Introduce la columna que quieres imprimir: "))
+for row in U:
+    columnX.append(row[i])
+    print(columnX)
+X = np.dot(m,mi)
+print(X)
+
+
+l = []
+n = int(input("Buscar los divisores de: "))
+i = 1
+while i <= n:
+    if n%i==0:
+        l.append(i)
+    i+=1
+print(l)
+"""
+def inversa(m):
+    if np.linalg.det(m) == 0:
+        return False
+    else:
+        mi = np.linalg.inv(m)
+    return mi
+def trasp(m):
+    t = np.transpose(m)
+    return t
+"""
+def inputmatrix(a, b):
+    M = []
+    for i in range(a):
+        c = []
+        for j in range(b):
+            j = int(input(f"Introduce el valor {i} {j}: "))
+            c.append(j)
+        M.append(c)
+    for i in range(a):
+        for j in range(b):
+            print(M[i][j], end=" ")
+        print()
+    return M
+
+a=int(input("Numero de filas:"))
+b = int(input(("Numero de columnas:")))
+U = np.zeros([a,b])
+L = np.eye(a)
+m = inputmatrix(a, b)
+n = np.zeros([a,b])
+"""
+
+
+def hadammar(c, d):
+    had = np.multiply(c, d)
+    return had
+"""
+def triang2x2(a,b):
+    while a == 2 and b == 2:
+        h = m[1][0] / m[0][0]
+        m[1][0] = -h * m[0][0] + m[1][0]
+        m[1][1] = -h * m[0][1] + m[1][1]
+        L[1][0] = h
+        U[0][0] = m[0][0]
+        U[0][1] = m[0][1]
+        U[1][1] = m[1][1]
+        break
+    return m
+
+def triang3x3(m):
+    k = m[1][0] / m[0][0]
+    t = m[2][0] / m[0][0]
+    m[1][0] = -k * m[0][0] + m[1][0]
+    m[1][1] = -k * m[0][1] + m[1][1]
+    m[1][2] = -k * m[0][2] + m[1][2]
+    m[2][0] = -t * m[0][0] + m[2][0]
+    m[2][1] = -t * m[0][1] + m[2][1]
+    m[2][2] = -t * m[0][2] + m[2][2]
+    x = m[2][1]/m[1][1]
+    print(x)
+    m[2][1] = -x * m[1][1] + m[2][1]
+    m[2][2] = -x * m[1][2] + m[2][2]
+    U[0][0] = m[0][0]
+    U[0][1] = m[0][1]
+    U[1][1] = m[1][1]
+    U[2][2] = m[2][2]
+    U[2][0] = m[2][0]
+    U[1][2] = m[1][2]
+    L[1][0] = k
+    L[2][0] = t
+    L[2][1] = x
+
+    return np.array(m)
+"""
+def combinada(a):
+    x = hadammar(a, trasp(inversa(a)))
+    return x
+combinada(np.random.rand(2,2))
+
+def maximo4x4(a):
+    x=[[a, -a, 0, 0],[0, a+1, a+1, 0], [0, 0, a+ 2, a+2], [a+3, 0, 0, -(a+3)]]
+    if np.linalg.det(x) == 0 or np.linalg.det(x) < 0.000005 and np.linalg.det(x) >-0.000005:
+        x[1][2] *= -1
+    return x
+
+def mD3x3(a):
+    x = [[a+1, a, -a], [0, a, -a], [-a, 0, -a]]
+    return x
+def combN(f):
+    h = 5
+    for i in range(h-1):
+        f = combinada(f)
+        print(f)
+    return f
+
+u = var('x')
+print(integrate((x**5 - 3)**0.5/(x**2 + 5*x)))
+
+ma = [[1, 2], [3, 4]]
+print(ma,"\nMatriz combinada:\n", combinada(ma))
+
+m1 = [[2, -2, 0, 0],[0, 3, 3, 0], [0, 0, 4, 4], [5, 0, 0, -5]]
+m2 = [[2, 1, -1],[0, 1, -1],[-1, 0, -1]]
+if inversa(m1) == False:
+    m1[1][2] *= -1
+print(m1)
+print("determinante m1: ", np.linalg.det(m1))
+if np.linalg.det(m2)==0:
+    m2[0][1] *= -1
+print(np.array(combinada(m1)))
+print(np.array(combinada(m2)))
+print(combinada(combinada(combinada(combinada(combinada(m2))))))
+"""
+print(triang3x3(inputmatrix(3,3)))
+"""
+#Grafica de simulacion 3d
+from matplotlib import cm
+import matplotlib.pyplot as plt
+import numpy as np
+
+fig = plt.figure()
+ax = fig.gca(projection='3d')
+X = np.arange(-5, 5, 0.25)
+Y = np.arange(-5, 5, 0.25)
+X, Y = np.meshgrid(X, Y)
+
+Z = np.sqrt(4.*(X**2 / 4 + Y**2)/4. + 1)
+
+xcolors = X - min(X.flat)
+xcolors = xcolors/max(xcolors.flat)
+
+surf = ax.plot_surface(X, Y, Z, rstride=1, cstride=1, facecolors=cm.hot(xcolors),
+    linewidth=1)
+
+plt.show()
+#Analis de una recta 
+import math
+import numpy as np
+from matplotlib import pyplot as plt
+from fractions import Fraction
+class coordenadas():
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+    def dist(self, cord_dos):
+        dis = ((cord_dos.x - self.x)**2 + (cord_dos.y - self.y)**2)*0.5
+        print(f"Distancia entre los puntos: {float(dis)}")
+    def pend(self, cord_dos):
+        pendiente =  (cord_dos.y - self.y)/(cord_dos.x - self.x)
+        print(f"Pendiente: {pendiente}")
+        p1 = cord_dos.y - self.y
+        p2 = cord_dos.x - self.x
+        self.pi = p1/p2
+        self.pendiente = Fraction(p1, p2)
+    def punto_medio(self, cord_dos):
+        p1 = cord_dos.y + self.y
+        p2 = cord_dos.x + self.x
+        M = [p2/2, p1/2]
+        print(M)
+        return M
+
+    def ecuacion_recta(self,cord_dos):
+        print(f"Ecuacion: y = {self.pendiente}x + ({(self.pi * -(self.x)) - self.y})")
+    def tangente(self,cord_dos):
+        p1 = cord_dos.y - self.y
+        p2 = cord_dos.x - self.x
+        res = math.degrees(math.atan(self.pendiente))
+        if p2 > 0  and p1 > 0:
+            print(f"tangente:{res}")
+        if p2 < 0 and p1 >0:
+            print(f"tangente:{res+180}")
+        if p2 < 0 and p1<0:
+            print(f"tangente:{res+270}")
+        if p2 > 0 and p1 < 0:
+            print(f"tangente:{res+360}")
+    def grafica(self):
+        x = np.array(range(-10, 10))
+        y = np.zeros(len(x))
+        print("  x | y")
+        for i in range(len(x)):
+            y[i] = self.pi*x[i] + self.pi * - self.x - self.y
+            print(f"\n{x[i]} | {y[i]}\n")
+        plt.plot(x, y)
+co1 = coordenadas(5, 2)
+co2 = coordenadas(-5,-6)
+co1.punto_medio(co2)
+co1.dist(co2)
+co1.pend(co2)
+co1.ecuacion_recta(co2)
+co1.tangente(co2)
+co1.grafica()
+plt.show()
+
+
