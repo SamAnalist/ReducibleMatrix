@@ -1,0 +1,333 @@
+import matplotlib.pyplot as plt
+import numpy as np
+import fractions
+import scipy.odr
+import sympy as s
+import math as m
+#funcion calcular la inversa de una matriz
+def traza(m):
+    #Funcion que calcula la traza de una matriz
+    traza = 0
+    for i in range(len(m)):
+        for j in range(i, i+1):
+            traza += m[i][j]
+    return traza
+
+
+def triang3x3(a):
+    #funcion que triangula una matriz 3x3
+    m = np.array(a)
+    k = m[1][0] / m[0][0]
+    t = m[2][0] / m[0][0]
+    m[1][0] = -k * m[0][0] + m[1][0]
+    m[1][1] = -k * m[0][1] + m[1][1]
+    m[1][2] = -k * m[0][2] + m[1][2]
+    m[2][0] = -t * m[0][0] + m[2][0]
+    m[2][1] = -t * m[0][1] + m[2][1]
+    m[2][2] = -t * m[0][2] + m[2][2]
+    x = m[2][1] / m[1][1]
+    m[2][1] = -x * m[1][1] + m[2][1]
+    m[2][2] = -x * m[1][2] + m[2][2]
+    return m
+def traspuesta(m):
+    return np.transpose(m)
+#B es una matriz especial, los elementos de su diagonal principal en su matriz triangulada son sus valores propios
+B =np.array([[2,-2,2], [0,1,1], [-4,8,3]])
+#Variables Generales Matriz X general 3x3
+a11 = s.var("a11")
+a12 = s.var("a12")
+a13 = s.var("a13")
+a21 = s.var("a21")
+a22 = s.var("a22")
+a23 = s.var("a23")
+a31 = s.var("a31")
+a32 = s.var("a32")
+a33 = s.var("a33")
+a14, a24, a34, a41, a42, a43, a44 = s.var("a14 a24 a34 a41 a42 a43 a44")
+X = np.array([[a11, a12, a13],[a21,a22, a23], [a31, a32, a33]])
+def determinant(a):
+    #determinante matriz nxn, matriz especial 3x3
+    if len(a) == 3:
+        q = a[0][0]*a[1][1]*a[2][2]
+        w = a[0][1]*a[1][2]*a[2][0]
+        e = a[0][2]*a[1][0]*a[2][1]
+        t = a[2][0]*a[1][1]*a[0][2]
+        y = a[2][1]*a[1][2]*a[0][0]
+        z = a[2][2]*a[1][0]*a[0][1]
+        return q+w+e - (t+y+z)
+    elif len(a) == 2:
+        q = a[0][0]*a[1][1]
+        r = a[0][1]*a[1][0]
+        return q-r
+    elif len(a) == 4:
+        matriz = a
+        det = (
+                matriz[0][0] * matriz[1][1] * matriz[2][2] * matriz[3][3] -
+                matriz[0][0] * matriz[1][1] * matriz[2][3] * matriz[3][2] -
+                matriz[0][0] * matriz[1][2] * matriz[2][1] * matriz[3][3] +
+                matriz[0][0] * matriz[1][2] * matriz[2][3] * matriz[3][1] +
+                matriz[0][0] * matriz[1][3] * matriz[2][1] * matriz[3][2] -
+                matriz[0][0] * matriz[1][3] * matriz[2][2] * matriz[3][1] -
+                matriz[0][1] * matriz[1][0] * matriz[2][2] * matriz[3][3] +
+                matriz[0][1] * matriz[1][0] * matriz[2][3] * matriz[3][2] +
+                matriz[0][1] * matriz[1][2] * matriz[2][0] * matriz[3][3] -
+                matriz[0][1] * matriz[1][2] * matriz[2][3] * matriz[3][0] -
+                matriz[0][1] * matriz[1][3] * matriz[2][0] * matriz[3][2] +
+                matriz[0][1] * matriz[1][3] * matriz[2][2] * matriz[3][0] +
+                matriz[0][2] * matriz[1][0] * matriz[2][1] * matriz[3][3] -
+                matriz[0][2] * matriz[1][0] * matriz[2][3] * matriz[3][1] -
+                matriz[0][2] * matriz[1][1] * matriz[2][0] * matriz[3][3] +
+                matriz[0][2] * matriz[1][1] * matriz[2][3] * matriz[3][0] +
+                matriz[0][2] * matriz[1][3] * matriz[2][0] * matriz[3][1] -
+                matriz[0][2] * matriz[1][3] * matriz[2][1] * matriz[3][0] -
+                matriz[0][3] * matriz[1][0] * matriz[2][1] * matriz[3][2] +
+                matriz[0][3] * matriz[1][0] * matriz[2][2] * matriz[3][1] +
+                matriz[0][3] * matriz[1][1] * matriz[2][0] * matriz[3][2] -
+                matriz[0][3] * matriz[1][1] * matriz[2][2] * matriz[3][0] -
+                matriz[0][3] * matriz[1][2] * matriz[2][0] * matriz[3][1] +
+                matriz[0][3] * matriz[1][2] * matriz[2][1] * matriz[3][0]
+        )
+
+        return det
+    assert len(a.shape) == 2
+    assert a.shape[0] == a.shape[1]
+    n = a.shape[0]
+
+    for k in range(0, n - 1):
+
+        for i in range(k + 1, n):
+            if a[i, k] != 0.0:
+                lam = a[i, k] / a[k, k]
+                a[i, k:n] = a[i, k:n] - lam * a[k, k:n]
+
+    # the matrix (a) is now in the upper triangular form
+
+    return np.prod(np.diag(a))
+def nx2n(n_Rows, n_Columns):
+    Zeros = []
+    for i in range(n_Rows):
+        Zeros.append([])
+        for j in range(n_Columns * 2):
+            Zeros[i].append(0)
+    return Zeros
+
+
+# Applying matrix coefficients
+def update(inputs, n_Rows, n_Columns, Zero):
+    for i in range(n_Rows):
+        for j in range(n_Columns):
+            Zero[i][j] = inputs[i][j]
+    return Zero
+
+
+# Augmenting Identity Matrix of Order n
+def identity(n_Rows, n_Columns, Matrix):
+    for i in range(n_Rows):
+        for j in range(n_Columns):
+            if i == j:
+                Matrix[i][j + n_Columns] = 1
+    return Matrix
+
+
+# Applying & implementing the GJE algorithm
+def Gussain_Jordan_Elimination(n_Rows, n_Columns, Matrix):
+    for i in range(n_Rows):
+        if Matrix[i][i] == 0:
+            print('error cannot divide by "0"')
+
+        for j in range(n_Columns):
+            if i != j:
+                ratio = Matrix[j][i] / Matrix[i][i]
+
+                for k in range(2 * n_Columns):
+                    Matrix[j][k] = Matrix[j][k] - ratio * Matrix[i][k]
+    return Matrix
+# Row Operation to make Principal Diagonal Element to '1'
+def row_op(n_Rows, n_Columns, Matrix):
+    for i in range(n_Rows):
+        divide = Matrix[i][i]
+        for j in range(2 * n_Columns):
+            Matrix[i][j] = Matrix[i][j] / divide
+    return Matrix
+
+
+# Matriz Inversa
+def Inverse(Matrix):
+    returnable = []
+    number_Rows = int(len(Matrix))
+    number_Columns = int(len(Matrix[0]))
+    Inversed_Matrix = (row_op(number_Rows, number_Columns,
+                              Gussain_Jordan_Elimination(number_Rows, number_Columns,
+                                                         identity(number_Rows, number_Columns,
+                                                                  update(Matrix, number_Rows, number_Columns,
+                                                                         nx2n(number_Rows, number_Columns))))))
+    for i in range(number_Rows):
+        returnable.append([])
+        for j in range(number_Columns, 2 * number_Columns):
+            returnable[i].append(Inversed_Matrix[i][j])
+    return np.array(returnable)
+def hadammar(c, d):
+    #Producto elemento a elemento "Producto de Hadammar"
+    had = np.multiply(c, d)
+    return had
+def combinada(a):
+    #Funcion que devuelve la matriz combinada dada una matriz
+    x = hadammar(a, traspuesta(Inverse(a)))
+    return np.array(x)
+def combN(f, h):
+    def combi(a):
+        # Funcion que devuelve la matriz combinada dada una matriz
+        x = hadammar(a, traspuesta(np.linalg.inv(a)))
+        return np.array(x)
+    #funcion que clacula una funcion N veces
+    for i in range(h-1):
+        f = combi(f)
+    return f
+def diagLambda(n):
+        M = np.eye(n,n)
+        x = s.var("x")
+        return M*x
+def PolinCarac(m):
+    # function returns the CP by definition
+    a = diagLambda(len(m))
+    L = -np.array(m) + np.array(a)
+    return s.expand(determinant(L))
+com = combinada(B)
+mTriang = triang3x3(B)
+pCX = PolinCarac(B)
+pCCom = PolinCarac(com)
+X1 = [[a11, a12], [a21, a22]]
+f = [[1,2], [2,3]]
+n = 3 # Tamaño de la matriz
+def generate_matrix(n):
+    # Generamos una matriz aleatoria de tamaño nxn con valores entre 0 y 1
+    A = np.random.rand(n, n)
+    # Normalizamos cada fila para que la suma de sus elementos sea igual a 1
+    A = A / A.sum(axis=1)[:, np.newaxis]
+    # Normalizamos cada columna para que la suma de sus elementos sea igual a 1
+    A = A / A.sum(axis=0)
+    return A
+def SumMinorMatrix(arr):
+    c = arr[:]
+    s = 0
+    for i in range(len(arr)):
+        for j in range(i, i + 1):
+            c1 = getMatrixMinor(c, i, j)
+            s = s + determinant(c1)
+    return s
+def SecondaryMinors(arr):
+    c = arr[:]
+    s = 0
+    for i in range(len(arr)):
+        for j in range(i, i + 1):
+            c1 = getMatrixMinor(c, i, j)
+            for h in range(len(c1)):
+                for k in range(h, h+1):
+                    c2 = getMatrixMinor(c1, h, k)
+                    s = s + determinant(c2)
+    return s/2
+def getMatrixMinor(arr,i,j):
+
+    c = arr[:]
+    c_r = np.delete(c, (i),axis=0) # deletes i-th row
+    c_c = np.delete(c_r, (j),axis=1) #deletes j-th column
+    return c_c
+
+def polCarac3x3(M):
+    x = s.var("x")
+    p = x ** 3 - traza(M) * x ** 2 + SumMinorMatrix(M) * x - determinant(M)
+    return s.factor(p)
+def polCarac4x4(M):
+    x = s.var("x")
+    p = x ** 4 - traza(M) * x ** 3 + SecondaryMinors(M) * x**2 + SumMinorMatrix(M)*x + determinant(M)
+    return p
+def eigvalcom3x3(M):
+    v1 = 1
+    v2 = ((traza(M)-1) + ((traza(M)-1)*(traza(M)+3) -4*SumMinorMatrix(M))**0.5)/2
+    v3 = ((traza(M)-1) - ((traza(M)-1)*(traza(M)+3) -4*SumMinorMatrix(M))**0.5)/2
+    return [v1, v2, v3]
+Bt = np.array([[a11, a12], [a21, a22]])
+#matriz simetrica 2x2
+B3 = np.array([[a11, a12], [a12, a22]])
+
+Bs = np.array([[a11, a12, a13], [a21, a22, a23], [a31, a32, a33]])
+
+M = np.array([[2,1,2],[3,9,1],[10,1,-1]])
+x = s.var("x")
+M3 = combinada(Bs)
+
+""""
+def generar_matriz(n):
+    matriz = np.random.rand(n, n)  # Generar una matriz aleatoria con valores entre 0 y 1
+
+    # Iterar hasta que se cumplan las condiciones requeridas
+    while True:
+        suma_filas = matriz.sum(axis=1)
+        suma_columnas = matriz.sum(axis=0)
+
+        # Verificar si se cumple la condición de suma igual a 1 en cada fila y columna
+        filas_correctas = np.allclose(suma_filas, 1)
+        columnas_correctas = np.allclose(suma_columnas, 1)
+
+        if filas_correctas and columnas_correctas:
+            break  # Salir del bucle si se cumplen las condiciones requeridas
+
+        # Ajustar los valores de la matriz
+        matriz = matriz / suma_filas[:, np.newaxis]
+        matriz = matriz / suma_columnas.sum()
+
+    return matriz
+
+# Generar y mostrar 10 matrices
+for i in range(10):
+    matriz = generar_matriz(3)
+    print(f"Matriz {i + 1}:")
+    print(matriz)
+    print()
+    print(matriz.sum(axis=0))
+    print(matriz.sum(axis=1))
+
+    print("--------------------------")
+"""
+def fact(matriz_A):
+    n = matriz_A.shape[0]
+
+    # Generar una matriz aleatoria B
+    matriz_B = np.random.rand(n, n)
+
+    # Calcular la matriz C como la división elemento a elemento de A y B
+    matriz_C = np.divide(matriz_A, matriz_B)
+
+    return matriz_B, matriz_C
+#matriz simetrica 3x3
+A = np.array([[1/3, 1/6, 1/2],
+     [1/6, 1/3, 1/2],
+     [1/2, 1/2, 0]])
+
+B4x4 = np.array([[a11, a12, a13, a14], [a21, a22, a23, a24], [a31, a32, a33, a34], [a41, a42, a43,a44]])
+matriz1 = np.array([[1, 2, 3, 8],
+                   [5, 6, 7, 8],
+                   [9, 10, 1, -1],
+                   [1, 2, 5, 5]])
+matriz2 = np.array([[a11, a12, a13, a14],
+     [a12, a22, a23, a24],
+     [a13, a23, a33, a34],
+     [a14, a24, a34, a44]])
+a15, a25, a35, a45, a55, a51, a52, a53, a54 = s.var("a15 a25 a35 a45 a55 a51 a52 a53 a54")
+B5x5 = np.array([[a11, a12, a13, a14, a15], [a21, a22, a23, a24,a25], [a31, a32, a33, a34, a35], [a41, a42, a43,a44,a45], [a51, a52, a53,a54, a55]])
+def sumamenores(arr):
+    c = arr[:]
+    s = []
+    for i in range(len(arr)):
+        for j in range(i, i + 1):
+                c1 = getMatrixMinor(c, i, j)
+                s.append(c1)
+    return s
+
+
+
+Me = np.array([[2, 1, 3, 5], [-1, -2, 0, 4], [0,1,1, 1], [2,1,3,-1]])
+print(Me)
+for i in range(len(Me)):
+    h = sumamenores(sumamenores(Me)[i])
+    print(np.vectorize(h))
