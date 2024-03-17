@@ -1,0 +1,252 @@
+import tkinter as tk
+import numpy as np
+import itertools
+
+def is_permutation(matrix):
+    n = len(matrix)
+    row_sums = [sum(row) for row in matrix]
+    col_sums = [sum(col) for col in zip(*matrix)]
+    return all(sum(row) == 1 and sum(col) == 1 for row, col in zip(matrix, zip(*matrix)))
+def permute_matrix(n):
+    indices = range(n)
+    for perm in itertools.permutations(indices):
+        matrix = [[0] * n for _ in range(n)]
+        for i, j in enumerate(perm):
+            matrix[i][j] = 1
+        if is_permutation(matrix):
+            yield matrix
+def get_A(A):
+    A = np.array(A)
+    n = A.shape[0]
+    l = []
+    matrices_permutacion = list(permute_matrix(n))
+    for i in range(len(matrices_permutacion)):
+        # print(np.array(matrices_permutacion[i])," x\n ",A, " = ")
+        l.append(np.dot(np.dot(np.array(matrices_permutacion[i]), A), np.transpose(matrices_permutacion[i])))
+          # deletes i-th row
+    return l
+
+
+def is_row_echelon(matrix):
+    rows, cols = matrix.shape
+    previous_lead_col = -1
+    if rows == 1 and cols ==1:
+        return False
+
+    for i in range(rows):
+        lead_col = None
+
+        # Find the leading column index (the first non-zero element in the row)
+        for j in range(cols):
+            if matrix[i, j] != 0:
+                lead_col = j
+                break
+
+        # Check for conditions of row-echelon form
+        if lead_col is None:
+            continue  # All zeros row, move to the next row
+
+        if lead_col <= previous_lead_col:
+            return False  # Leading column index not strictly increasing
+        if rows == 1 and cols == 1:
+            return False
+        for k in range(i + 1, rows):
+            if matrix[k, lead_col] != 0:
+                return False  # Nonzero element below a leading element
+
+        previous_lead_col = lead_col
+
+    return True
+
+def remove_rows_columns(matrix, n):
+    if n <= 0:
+        return matrix
+
+    rows, cols = matrix.shape
+
+    if n >= rows or n >= cols:
+        return np.array([])
+
+    new_matrix = matrix[:n, :n]
+    return new_matrix
+
+def remove_rows_columns1(matrix, n):
+    if n <= 0:
+        return matrix
+
+    rows, cols = matrix.shape
+
+    if n >= rows or n >= cols:
+        return np.array([])
+
+    new_matrix = matrix[n:, n:]
+    return new_matrix
+def has_zero_in_last_row(matrix):
+    last_row = matrix[-1, :]
+    return last_row[0] == 0
+
+def find_matrices_with_zero(array_of_matrices):
+    result = []
+    for matrix in array_of_matrices:
+        if has_zero_in_last_row(matrix):
+            result.append(matrix)
+    return result
+def combinada(n):
+    m = np.array(n)
+    return np.multiply(n, np.linalg.inv(n.T))
+def IsDDD(matriz):
+    n = min(len(matriz), len(matriz[0]))
+    resultado = []
+    r = []
+    for i in range(n):
+        for j in range(i+1, n):
+            d = matriz[i][i] * matriz[j][j]
+            m = (sum(matriz[i]) -matriz[i][i])*(sum(matriz[j])-matriz[j][j])
+            r.append(d>m)
+            resultado.append(d>=m)
+
+    if all(r):
+        return "Estrictamente doble diagonal dominante"
+    elif all(resultado):
+        return "Doble diagonal dominante"
+    else:
+        return "No cumple"
+def testReducible(A):
+    n = find_matrices_with_zero(get_A(A))
+    for i in n:
+        for k in range(len(i)):
+            r = len(remove_rows_columns(i, k)[0])
+            d = len(remove_rows_columns1(i, k)[0])
+            if r == k and d == len(n[0]) - k and (is_row_echelon(remove_rows_columns(i, k)) or is_row_echelon(remove_rows_columns1(i, k))):
+                return "Reducible"
+            else:
+                pass
+    return "Irreducible"
+def generate_and_print_reducible_matrices(dimension):
+    l = []
+    while len(l) <= 10:
+        matrix = np.random.randint(0, 5, size=(dimension, dimension))
+        if testReducible(matrix) == "Reducible":
+            l.append(matrix)
+    return l
+
+def generateSDDD(dimension):
+    l = []
+    while len(l) <= 10:
+        matrix = np.random.randint(0, 5, size=(dimension, dimension))
+        if IsDDD(matrix) == "Estrictamente doble diagonal dominante":
+            l.append(matrix)
+    return l
+def generateDDD(dimension):
+    l = []
+    while len(l) <= 10:
+        matrix = np.random.randint(0, 5, size=(dimension, dimension))
+        if IsDDD(matrix) == "Doble diagonal dominante":
+
+            l.append(matrix)
+    return l
+import tkinter as tk
+import numpy as np
+
+class MatrizCalculator:
+    def __init__(self, ventana):
+        self.ventana = ventana
+        self.ventana.title("Calculadora de Matrices")
+
+        # Menú para elegir la función
+        self.menu = tk.Menu(self.ventana)
+        self.ventana.config(menu=self.menu)
+        self.funciones_menu = tk.Menu(self.menu)
+        self.menu.add_cascade(label="Funciones", menu=self.funciones_menu)
+        self.funciones_menu.add_command(label="Calcular si es DDD", command=self.calcular_ddd)
+        self.funciones_menu.add_command(label="Verificar Reducibilidad", command=self.verificar_reducible)
+        self.funciones_menu.add_command(label="Matriz combinada", command=self.aplicar_matriz_combinada)
+
+        # Etiqueta para la dimensión de la matriz
+        self.label_dimension = tk.Label(self.ventana, text="Dimensión de la matriz:")
+        self.label_dimension.pack()
+
+        # Campo de entrada para la dimensión de la matriz
+        self.entry_dimension = tk.Entry(self.ventana)
+        self.entry_dimension.pack()
+
+        # Text area para mostrar ejemplos y resultados
+        self.text_area = tk.Text(self.ventana)
+        self.text_area.pack()
+
+        # Agregar botones para mostrar ejemplos reducibles y DDD
+        self.btn_ejemplos_reducible = tk.Button(self.ventana, text="Generar Ejemplos Reducibles",
+                                                command=self.mostrar_ejemplos_reducible)
+        self.btn_ejemplos_reducible.pack()
+
+        self.btn_ejemplos_DDD = tk.Button(self.ventana, text="Generar Ejemplos DDD", command=self.mostrar_ejemplos_DDD)
+        self.btn_ejemplos_DDD.pack()
+
+        self.btn_ejemplos_SDDD = tk.Button(self.ventana, text="Generar Ejemplos SDDD",
+                                           command=self.mostrar_ejemplos_SDDD)
+        self.btn_ejemplos_SDDD.pack()
+
+    def obtener_matrices_desde_text_area(self):
+        # Obtiene las matrices del text_area y las devuelve como una lista de matrices NumPy
+        return [np.array(list(map(float, linea.split()))) for linea in self.text_area.get("1.0", tk.END).splitlines() if linea.strip()]
+
+    def calcular_ddd(self):
+        matrices_entrada = self.obtener_matrices_desde_text_area()
+        resultados = IsDDD(matrices_entrada)
+
+        # Borra el contenido anterior en el widget Text
+        self.text_area.delete(1.0, tk.END)
+
+        # Inserta los resultados en el widget Text
+        for resultado in resultados:
+            self.text_area.insert(tk.END, str(resultado))
+
+    def verificar_reducible(self):
+        matrices_entrada = self.obtener_matrices_desde_text_area()
+        resultados = testReducible(matrices_entrada)
+
+        # Borra el contenido anterior en el widget Text
+        self.text_area.delete(1.0, tk.END)
+
+        # Inserta los resultados en el widget Text
+        self.text_area.insert(tk.END, str(resultados))
+
+    def aplicar_matriz_combinada(self):
+        matrices_entrada = self.obtener_matrices_desde_text_area()
+        resultados = combinada(np.array(matrices_entrada))
+
+        # Borra el contenido anterior en el widget Text
+        self.text_area.delete(1.0, tk.END)
+
+        # Inserta los resultados en el widget Text
+        for resultado in resultados:
+            self.text_area.insert(tk.END, str(resultado) + '\n')
+
+    def mostrar_ejemplos_reducible(self):
+        n = int(self.entry_dimension.get())
+        l = generate_and_print_reducible_matrices(n)
+        self.text_area.delete(1.0, tk.END)
+
+        for ejemplo in l:
+            self.text_area.insert(tk.END, str(ejemplo) + '\n')
+
+    def mostrar_ejemplos_DDD(self):
+        n = int(self.entry_dimension.get())
+        l = generateDDD(n)
+        self.text_area.delete(1.0, tk.END)
+
+        for ejemplo in l:
+            self.text_area.insert(tk.END, str(ejemplo) + '\n')
+
+    def mostrar_ejemplos_SDDD(self):
+        n = int(self.entry_dimension.get())
+        l = generateSDDD(n)
+        self.text_area.delete(1.0, tk.END)
+
+        for ejemplo in l:
+            self.text_area.insert(tk.END, str(ejemplo) + '\n')
+
+# Crear la ventana principal
+ventana = tk.Tk()
+app = MatrizCalculator(ventana)
+ventana.mainloop()
